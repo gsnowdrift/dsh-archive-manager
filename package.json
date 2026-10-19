@@ -1,0 +1,73 @@
+{
+  "name": "dsh-archive-manager",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "归档会话管理插件：在 DSH 设置里按日期/工作区筛选已归档会话、批量取消归档，并提供可逆的自动清理策略（自动归档闲置会话 / 保留期还原 / 上限还原）。",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "plugin",
+    "session",
+    "archive",
+    "cleanup",
+    "settings"
+  ],
+  "license": "MIT",
+  "author": "Mr-SYGao",
+  "homepage": "https://github.com/Mr-SYGao/dsh-archive-manager#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mr-SYGao/dsh-archive-manager.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Mr-SYGao/dsh-archive-manager/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json"
+  },
+  "files": [
+    "lib",
+    "locale",
+    "docs",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-client-ui-settings-general",
+        "@deepseek-ai/dsh-client-modules"
+      ],
+      "platform": "web"
+    },
+    "manifestVersion": 1
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "~4.0.5",
+    "@deepseek-ai/dsh-typert-protocol": "*",
+    "@deepseek-ai/dsh-storage-domain": "*",
+    "@deepseek-ai/dsh-session-query": "*",
+    "@deepseek-ai/dsh-workspace": "*",
+    "@deepseek-ai/schemastery": "*",
+    "zod": "^4.4.3"
+  }
+}

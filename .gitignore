@@ -1,0 +1,18 @@
+# dependencies
+node_modules/
+
+# build / tooling output
+*.tgz
+.tmp/
+tmp/
+dist/
+
+# editor / OS noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log
+
+# local probes (kept out of the published package)
+.probe-*.mjs

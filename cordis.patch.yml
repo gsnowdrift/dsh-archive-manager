@@ -1,0 +1,7 @@
+# archive-manager bundle patch: one row inserted over the profile root.
+# Later bundle patches and the user's profile patch may target it by id.
+- insert:
+    - id: archive-manager
+      name: 'dsh-archive-manager'
+      config:
+        cleanupIntervalMinutes: 30

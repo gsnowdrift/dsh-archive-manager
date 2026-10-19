@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Archive Manager",
+    "description": "Filter archived sessions by date, unarchive in bulk, and clean the archive list automatically with a reversible policy."
+  }
+}
