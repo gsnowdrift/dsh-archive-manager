@@ -27,7 +27,7 @@
 - 保留天数、清理策略、是否包含子代理会话
 
 ## 4. 技术方案
-- 单 npm 包、单行挂载：`@deepseek-ai/dsh-archive-manager`，Host 半 + `./client` 客户端半（浏览器原生 ESM，无构建步骤）
+- 单 npm 包、单行挂载：`@gsnowdrift/dsh-archive-manager`，Host 半 + `./client` 客户端半（浏览器原生 ESM，无构建步骤）
 - **Host 半**：`Service` + `TypertRemoteService`，命名空间 `archiveManager`；订阅 `workspace/follow-equivalent`（`ctx.workspaceRegistry`）与 `ctx.sessionQuery`（列表/统计），记录归档时间与自动归档标记，定时器执行清理策略
 - **Client 半**：注册侧栏面板 `sidebar.panellist`（"已归档"）+ `main` 面板页面，通过 `ctx.remote.archiveManager` 调用
 - **状态持久化**：`ctx.storage`（或插件自有 JSON 文件），保存在 `$DSH_HOME` 下

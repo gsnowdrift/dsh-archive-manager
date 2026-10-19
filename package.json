@@ -1,5 +1,5 @@
 {
-  "name": "dsh-archive-manager",
+  "name": "@gsnowdrift/dsh-archive-manager",
   "version": "0.1.0",
   "type": "module",
   "description": "归档会话管理插件：在 DSH 设置里按日期/工作区筛选已归档会话、批量取消归档，并提供可逆的自动清理策略（自动归档闲置会话 / 保留期还原 / 上限还原）。",
@@ -14,14 +14,14 @@
     "settings"
   ],
   "license": "MIT",
-  "author": "Mr-SYGao",
-  "homepage": "https://github.com/Mr-SYGao/dsh-archive-manager#readme",
+  "author": "gsnowdrift",
+  "homepage": "https://github.com/gsnowdrift/dsh-archive-manager#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Mr-SYGao/dsh-archive-manager.git"
+    "url": "git+https://github.com/gsnowdrift/dsh-archive-manager.git"
   },
   "bugs": {
-    "url": "https://github.com/Mr-SYGao/dsh-archive-manager/issues"
+    "url": "https://github.com/gsnowdrift/dsh-archive-manager/issues"
   },
   "publishConfig": {
     "access": "public",

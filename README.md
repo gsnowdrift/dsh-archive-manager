@@ -6,18 +6,18 @@
 
 [[English](#english)](#english)
 
-[![Listed on dsh-plugin.org](https://dsh-plugin.org/badges/listed.svg)](https://dsh-plugin.org/plugins/Mr-SYGao/dsh-archive-manager)
+[![Listed on dsh-plugin.org](https://dsh-plugin.org/badges/listed.svg)](https://dsh-plugin.org/plugins/gsnowdrift/dsh-archive-manager)
 
 ## 安装
 
 ```bash
-dsh plugin --profile web add dsh-archive-manager
+dsh plugin --profile web add @gsnowdrift/dsh-archive-manager
 ```
 
 桌面版把 profile 换成 `desktop`：
 
 ```bash
-dsh plugin --profile desktop add dsh-archive-manager
+dsh plugin --profile desktop add @gsnowdrift/dsh-archive-manager
 ```
 
 装完重启 DSH（或重新打开客户端），进入 **设置 → 归档会话**。
@@ -26,7 +26,7 @@ dsh plugin --profile desktop add dsh-archive-manager
 <summary>从源码安装 / 本地开发</summary>
 
 ```bash
-git clone https://github.com/Mr-SYGao/dsh-archive-manager.git
+git clone https://github.com/gsnowdrift/dsh-archive-manager.git
 dsh plugin --profile desktop add "file:D:/path/to/dsh-archive-manager"
 ```
 
@@ -130,7 +130,7 @@ auto-cleanup policy (auto-archive idle sessions, restore expired or excess ones)
 deleted by the cleanup policy; deletion only happens when you explicitly ask for it.
 
 ```bash
-dsh plugin --profile web add dsh-archive-manager
+dsh plugin --profile web add @gsnowdrift/dsh-archive-manager
 ```
 
 Open **Settings → Archived sessions**. Requires DSH 0.2.x on the `desktop` or `web` profile. MIT licensed.
