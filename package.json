@@ -1,6 +1,6 @@
 {
   "name": "@gsnowdrift/dsh-archive-manager",
-  "version": "0.1.1",
+  "version": "0.2.3",
   "type": "module",
   "description": "归档会话管理插件：在 DSH 设置里按日期/工作区筛选已归档会话、批量取消归档，并提供可逆的自动清理策略（自动归档闲置会话 / 保留期还原 / 上限还原）。",
   "keywords": [
