@@ -1,8 +1,8 @@
 {
   "name": "@gsnowdrift/dsh-archive-manager",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "type": "module",
-  "description": "归档会话管理插件：在 DSH 设置里按日期/工作区筛选已归档会话、批量取消归档，并提供可逆的自动清理策略（自动归档闲置会话 / 保留期还原 / 上限还原）。",
+  "description": "归档会话管理插件：在 DSH 设置里按日期/工作区筛选已归档会话、批量取消归档，并提供自动清理策略（自动归档闲置会话 / 自动删除过期归档，0 = 归档时立即删除）。",
   "keywords": [
     "dsh",
     "dsh-plugin",
@@ -28,6 +28,12 @@
     "registry": "https://registry.npmjs.org/"
   },
   "main": "lib/index.js",
+  "scripts": {
+    "build:client": "node scripts/build-client.mjs",
+    "build": "node scripts/build-client.mjs",
+    "preview:ui": "node scripts/preview-ui.mjs",
+    "install:desktop": "node scripts/install-desktop.mjs"
+  },
   "exports": {
     ".": "./lib/index.js",
     "./client": "./lib/client.js",
@@ -63,5 +69,15 @@
   },
   "dependencies": {
     "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@mantine/core": "^7.17.8",
+    "@mantine/dates": "^7.17.8",
+    "@mantine/hooks": "^7.17.8",
+    "dayjs": "^1.11.23",
+    "esbuild": "^0.28.2",
+    "playwright-core": "^1.65.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   }
 }

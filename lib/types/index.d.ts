@@ -17,9 +17,11 @@ export interface ArchiveRow {
 export interface ArchivePolicy {
   cleanupEnabled: boolean
   autoArchiveDays: number
-  retentionDays: number
-  capCount: number
-  includeSubagents: boolean
+  /**
+   * Days an archived session may stay before it is auto-deleted.
+   * 0 replaces the age clock with "delete at archiving".
+   */
+  autoDeleteDays: number
 }
 
 export interface ArchiveListRequest {
@@ -31,8 +33,8 @@ export interface ArchiveListRequest {
 export interface CleanupAction {
   id: string
   title: string
-  kind: 'archive' | 'unarchive'
-  reason: 'idle' | 'retention' | 'cap'
+  kind: 'archive' | 'delete'
+  reason: 'idle' | 'expire'
   ageDays: number
 }
 
