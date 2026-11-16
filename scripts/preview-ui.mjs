@@ -51,14 +51,15 @@ const html = `<!doctype html>
 <style>${css.text}</style>
 <style>
   body { margin: 0; padding: 20px; background: #f6f6f4; font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; }
-  #root { max-width: 900px; margin: 0 auto; }
+  /* DSH's settings panel is 800px wide with a 188px nav; this is the rest. */
+  #root { width: 580px; margin: 0 auto; }
 </style>
 </head><body><div id="root"></div>
 <script>${js.text}</script>
 </body></html>`
 
 const browser = await chromium.launch({ executablePath, headless: true })
-const page = await browser.newPage({ viewport: { width: 980, height: 900 }, deviceScaleFactor: 2 })
+const page = await browser.newPage({ viewport: { width: 620, height: 900 }, deviceScaleFactor: 2 })
 const failures = []
 page.on('pageerror', (error) => failures.push(`pageerror: ${error.message}`))
 page.on('console', (message) => {
@@ -71,12 +72,12 @@ await mkdir(resolve(root, 'docs'), { recursive: true })
 
 // Tall viewport + subagents on: the list shot should show every row kind
 // (auto / manual / subagent) and the cleanup card underneath.
-await page.setViewportSize({ width: 980, height: 1520 })
+await page.setViewportSize({ width: 620, height: 1520 })
 await page.locator('label', { hasText: '含子代理' }).first().click()
 await page.waitForTimeout(600)
 await page.screenshot({ path: resolve(root, 'docs/ui-list.png'), fullPage: true })
 
-await page.setViewportSize({ width: 980, height: 900 })
+await page.setViewportSize({ width: 620, height: 900 })
 await page.waitForTimeout(200)
 
 // Show the picker with a range already selected — an empty calendar says

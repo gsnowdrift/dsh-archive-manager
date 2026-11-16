@@ -40,6 +40,7 @@ import '@mantine/dates/styles.css'
 import 'dayjs/locale/zh-cn'
 
 const NS = 'archiveManager'
+const PAGE_SIZE = 10
 const REMOTE_NS = 'archiveManager'
 const REMOTE_SERVICE_KEY = `remote.${REMOTE_NS}`
 
@@ -561,7 +562,7 @@ function ArchiveManagerPage(props) {
           includeSubagents: filter.includeSubagents,
         },
         page,
-        pageSize: 25,
+        pageSize: PAGE_SIZE,
       }
       const result = await api.list(request)
       if (!result.ok) throw new Error(result.error?.message || String(result.error))
@@ -775,13 +776,16 @@ function ArchiveManagerPage(props) {
           <Alert color="orange" variant="light">{t('panel.hostStale')}</Alert>
         ) : null}
 
-        <Group gap="xs" wrap="wrap">
+        {/* One row. The search field used to stretch across the whole panel
+            while the filters sat underneath it; at ~560px everything still
+            fits, so the field only takes what it needs. */}
+        <Group gap="xs" wrap="nowrap">
           <TextInput
             placeholder={t('panel.search')}
             value={query}
             onChange={(event) => setQuery(event.currentTarget.value)}
             size="sm"
-            style={{ flex: '1 1 220px', minWidth: 180 }}
+            style={{ flex: '1 1 160px', minWidth: 110, maxWidth: 260 }}
           />
           <DateRangeControl
             range={{ from: filter.from, to: filter.to }}
@@ -798,7 +802,7 @@ function ArchiveManagerPage(props) {
             onChange={(event) => { setPage(1); setFilter((current) => ({ ...current, workspaceId: event.currentTarget.value })) }}
             size="sm"
             aria-label={t('panel.workspace.all')}
-            w={150}
+            w={126}
           />
           <Switch
             size="sm"
@@ -854,29 +858,6 @@ function ArchiveManagerPage(props) {
           </Center>
         ) : (
           <Stack gap="md">
-            <Group justify="space-between" gap="xs">
-              <Group gap={8}>
-                <Checkbox
-                  size="sm"
-                  checked={allSelected}
-                  indeterminate={!allSelected && pageIds.some((id) => selected.has(id))}
-                  onChange={(event) => {
-                    const checked = event.currentTarget.checked
-                    setSelected((current) => {
-                      const next = new Set(current)
-                      for (const id of pageIds) {
-                        if (checked) next.add(id)
-                        else next.delete(id)
-                      }
-                      return next
-                    })
-                  }}
-                  aria-label={t('panel.selectAll')}
-                />
-                <Text size="xs" c="dimmed">{t('panel.selectAll')}</Text>
-              </Group>
-            </Group>
-
             {groups.map((group) => (
               <Stack key={group.key} gap="xs">
                 <Text size="xs" c="dimmed" fw={500}>{groupLabel(group)}</Text>
@@ -893,28 +874,26 @@ function ArchiveManagerPage(props) {
                         ? { borderColor: 'var(--mantine-color-blue-4)', background: 'var(--mantine-color-blue-0)' }
                         : undefined}
                     >
-                      <Group align="flex-start" wrap="nowrap" gap="sm">
+                      <Group align="center" wrap="nowrap" gap="sm">
                         <Checkbox
                           size="sm"
-                          mt={2}
                           checked={checked}
                           onChange={(event) => toggle(row.id, event.currentTarget.checked)}
                           aria-label={row.title}
                         />
                         <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
-                          <Group gap={6} wrap="wrap">
-                            <Text size="sm" fw={500} truncate style={{ maxWidth: '100%' }}>{row.title}</Text>
+                          <Group gap={6} wrap="nowrap">
+                            <Text size="sm" fw={500} truncate style={{ minWidth: 0 }}>{row.title}</Text>
                             {row.running ? <Badge color="orange" variant="light" size="sm">{t('panel.badge.running')}</Badge> : null}
                             <Badge color={row.reason === 'auto' ? 'blue' : 'gray'} variant="light" size="sm">
                               {row.reason === 'auto' ? t('panel.badge.auto') : t('panel.badge.manual')}
                             </Badge>
                             {row.parentId !== null ? <Badge color="gray" variant="outline" size="sm">{t('panel.badge.subagent')}</Badge> : null}
                           </Group>
-                          <Text size="xs" c="dimmed" truncate>{workspaceTitle}{row.cwd ? ` · ${row.cwd}` : ''}</Text>
-                          <Text size="xs" c="dimmed">
-                            {fill(t('panel.archivedAt'), { time: formatTime(row.archivedAt) })}
-                            {' · '}
-                            {fill(t('panel.activity'), { time: relativeTime(row.activityAt) })}
+                          {/* No timestamp: the list is grouped by archive day,
+                              so a per-row date only repeated its group header. */}
+                          <Text size="xs" c="dimmed" truncate title={`${workspaceTitle}${row.cwd ? ` · ${row.cwd}` : ''}`}>
+                            {workspaceTitle}{row.cwd ? ` · ${row.cwd}` : ''}
                           </Text>
                         </Stack>
                         <Group gap={2} wrap="nowrap" style={{ flex: 'none' }}>
@@ -946,15 +925,39 @@ function ArchiveManagerPage(props) {
               </Stack>
             ))}
 
-            <Group justify="space-between" gap="xs">
-              <Text size="xs" c="dimmed">{fill(t('panel.total'), { count: total })}</Text>
+            {/* Left inset matches the card padding (so the select-all box lines
+                up with the row checkboxes); the right edge stays flush with the
+                card border, like the refresh button in the header. */}
+            <Group justify="space-between" gap="xs" style={{ paddingLeft: 13 }}>
+              <Group gap={8}>
+                <Checkbox
+                  size="xs"
+                  checked={allSelected}
+                  indeterminate={!allSelected && pageIds.some((id) => selected.has(id))}
+                  onChange={(event) => {
+                    const checked = event.currentTarget.checked
+                    setSelected((current) => {
+                      const next = new Set(current)
+                      for (const id of pageIds) {
+                        if (checked) next.add(id)
+                        else next.delete(id)
+                      }
+                      return next
+                    })
+                  }}
+                  aria-label={t('panel.selectAll')}
+                />
+                <Text size="xs" c="dimmed">{t('panel.selectAll')}</Text>
+                <Text size="xs" c="dimmed">·</Text>
+                <Text size="xs" c="dimmed">{fill(t('panel.total'), { count: total })}</Text>
+              </Group>
               <Pagination size="sm" total={pageCount} value={page} onChange={setPage} withEdges={pageCount > 7} />
             </Group>
           </Stack>
         )}
 
         {policy === null ? null : (
-          <Card withBorder radius="md" padding="md">
+          <Card withBorder radius="md" padding="sm">
             <Text fw={500} size="sm" mb={4}>{t('panel.settings')}</Text>
             <Stack gap={0}>
               <Group justify="space-between" py="xs" style={divider}>
