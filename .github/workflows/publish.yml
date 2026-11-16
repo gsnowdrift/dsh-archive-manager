@@ -1,0 +1,66 @@
+name: publish
+
+# Publishes to npm via Trusted Publishing (OIDC): no NPM_TOKEN secret exists,
+# npm exchanges the workflow's identity token for a short-lived credential and
+# attaches a provenance attestation. Configure it once on npmjs.com:
+#   Package → Settings → Trusted Publisher → GitHub Actions
+#   Organization/user: gsnowdrift   Repository: dsh-archive-manager
+#   Workflow filename: publish.yml  Environment: (leave empty)
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # OIDC token for trusted publishing + provenance
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      # Trusted publishing needs npm >= 11.5.1 to perform the OIDC exchange.
+      - name: Upgrade npm
+        run: npm install -g npm@latest
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build the client bundle
+        run: npm run build:client
+
+      - name: Check syntax
+        run: |
+          node --check lib/index.js
+          node --check lib/client.js
+
+      - name: Detect an already published version
+        id: version
+        run: |
+          name=$(node -p "require('./package.json').name")
+          version=$(node -p "require('./package.json').version")
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if npm view "$name@$version" version >/dev/null 2>&1; then
+            echo "$name@$version is already on the registry — nothing to do."
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish
+        if: steps.version.outputs.published == 'false'
+        run: npm publish --provenance --access public

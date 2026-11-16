@@ -128,6 +128,23 @@ Host 半只使用 profile 已经提供的包：`@deepseek-ai/cordis`、`@deepsee
 `@deepseek-ai/dsh-typert-protocol`、`@deepseek-ai/dsh-storage-domain`、`@deepseek-ai/dsh-session-query`、
 `@deepseek-ai/dsh-workspace` 与 `zod`（都写在 `peerDependencies`，不额外安装）。
 
+## 发布
+
+发版走 GitHub Actions + npm **Trusted Publishing**（OIDC），仓库里不存任何 npm token：
+
+1. 改 `package.json` 的 `version`，提交；
+2. `git tag v0.3.1 && git push origin v0.3.1`；
+3. 在 GitHub 上基于该 tag 建 Release；
+4. `.github/workflows/publish.yml` 自动执行 `npm ci → build:client → npm publish --provenance`。
+
+首次需在 npmjs.com 上登记一次（之后都免密）：
+
+> Package → Settings → Trusted Publisher → GitHub Actions
+> Organization/user `gsnowdrift`，Repository `dsh-archive-manager`，
+> Workflow filename `publish.yml`，Environment 留空。
+
+工作流也会跳过已发布的版本，重复触发不会报错。
+
 ## 权限与数据
 
 | 项 | 说明 |
@@ -140,6 +157,13 @@ Host 半只使用 profile 已经提供的包：`@deepseek-ai/cordis`、`@deepsee
 
 ## 已知限制
 
+- 删除的范围是：**会话目录**（`$DSH_HOME/sessions/<项目>/<id>/`，整个删掉、不可恢复）
+  + **DSH 自己的索引**（归档集合、工作区记账）。其他插件自己缓存的条目不在范围内——
+  那是它们的数据，会在各自重扫时自行失效。
+- 目录的定位顺序：`sessionPersistence.locate()` → 扫描 `$DSH_HOME/sessions/*/<id>/`
+  （`<id>` 与 `session-<id>` 两种命名都匹配）。冷存储里 `stat()` 返回 `undefined`，
+  只信它会让"删除"退化成"取消归档"。删除后会复验：日志、归档集合、工作区记账
+  三者任一仍有残留，就在结果里报出来，而不是假装成功。
 - 归档集合本身不记录归档时间：本插件在看到某会话进入归档集合的那一刻记录时间；
   插件首次启动前就已归档的会话，用该会话 header 的创建时间兜底。
 - 「自动删除」的倒计时从上面记录的归档时刻起算，因此插件首次启动前就已归档的会话，
