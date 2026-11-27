@@ -40,7 +40,12 @@ import '@mantine/dates/styles.css'
 import 'dayjs/locale/zh-cn'
 
 const NS = 'archiveManager'
-const PAGE_SIZE = 10
+const PAGE_SIZE_OPTIONS = [10, 50, 100, 500]
+const PAGE_SIZE_DEFAULT = PAGE_SIZE_OPTIONS[0]
+// Rows the list shows before it starts scrolling on its own. Matches the
+// default page size, so a fresh page fits exactly and only a bigger
+// per-page setting brings the bar out.
+const LIST_VISIBLE_ROWS = 10
 const REMOTE_NS = 'archiveManager'
 const REMOTE_SERVICE_KEY = `remote.${REMOTE_NS}`
 
@@ -82,6 +87,7 @@ const zh = {
   'panel.hoursAgo': '{count} 小时前',
   'panel.yesterday': '昨天',
   'panel.selectAll': '全选本页',
+  'panel.pageSize': '每页 {count} 条',
   'panel.badge.running': '运行中',
   'panel.badge.auto': '自动归档',
   'panel.badge.manual': '手动归档',
@@ -152,6 +158,7 @@ const en = {
   'panel.hoursAgo': '{count} h ago',
   'panel.yesterday': 'yesterday',
   'panel.selectAll': 'Select page',
+  'panel.pageSize': '{count} per page',
   'panel.badge.running': 'Running',
   'panel.badge.auto': 'Auto',
   'panel.badge.manual': 'Manual',
@@ -505,6 +512,7 @@ function ArchiveManagerPage(props) {
   const [query, setQuery] = React.useState('')
   const [filter, setFilter] = React.useState({ workspaceId: '', from: '', to: '', includeSubagents: false })
   const [page, setPage] = React.useState(1)
+  const [pageSize, setPageSize] = React.useState(PAGE_SIZE_DEFAULT)
   const [selected, setSelected] = React.useState(() => new Set())
   const [settings, setSettings] = React.useState(null)
   const [notice, setNotice] = React.useState(null)
@@ -562,7 +570,7 @@ function ArchiveManagerPage(props) {
           includeSubagents: filter.includeSubagents,
         },
         page,
-        pageSize: PAGE_SIZE,
+        pageSize,
       }
       const result = await api.list(request)
       if (!result.ok) throw new Error(result.error?.message || String(result.error))
@@ -570,7 +578,7 @@ function ArchiveManagerPage(props) {
     } catch (error) {
       setState({ loading: false, error: String(error && error.message ? error.message : error), data: null })
     }
-  }, [api, filter.from, filter.to, filter.workspaceId, filter.includeSubagents, search, page, accept])
+  }, [api, filter.from, filter.to, filter.workspaceId, filter.includeSubagents, search, page, pageSize, accept])
 
   React.useEffect(() => { load() }, [load])
 
@@ -750,6 +758,30 @@ function ArchiveManagerPage(props) {
     return fill(t('panel.groupDay'), { date: dayLabel(group.stamp), count: group.rows.length })
   }
 
+  const listRef = React.useRef(null)
+  const [listMaxHeight, setListMaxHeight] = React.useState(null)
+
+  // Cut the window right below the LIST_VISIBLE_ROWS-th row. Row height is
+  // content-driven (badges, wrapped titles), so the cut has to be measured,
+  // not assumed.
+  React.useLayoutEffect(() => {
+    const node = listRef.current
+    if (node === null) return
+    const cards = node.querySelectorAll('[data-row-card]')
+    if (cards.length <= LIST_VISIBLE_ROWS) {
+      setListMaxHeight(null)
+      return
+    }
+    const base = node.getBoundingClientRect().top - node.scrollTop
+    const last = cards[LIST_VISIBLE_ROWS - 1].getBoundingClientRect()
+    setListMaxHeight(Math.ceil(last.bottom - base))
+  }, [rows, pageSize])
+
+  // A new page should start at the top of the window.
+  React.useEffect(() => {
+    if (listRef.current !== null) listRef.current.scrollTop = 0
+  }, [page, pageSize])
+
   return (
     <MantineProvider theme={theme}>
       <DatesProvider settings={{ locale: isZhLocale() ? 'zh-cn' : 'en', firstDayOfWeek: 1 }}>
@@ -816,24 +848,59 @@ function ArchiveManagerPage(props) {
           />
         </Group>
 
-        {selected.size > 0 ? (
-          <Paper withBorder radius="md" p="xs" style={{ background: 'var(--mantine-color-blue-light)' }}>
-            <Group justify="space-between" gap="xs">
-              <Text size="sm" c="blue.9">{fill(t('panel.selected'), { count: selected.size })}</Text>
-              <Group gap="xs">
-                <Button variant="default" size="compact-sm" disabled={busy} onClick={() => setSelected(new Set())}>
+        {/* One toolbar for select-all + batch actions: p="sm" matches the row
+            Card padding, so the box lands on the same x as the row checkboxes. */}
+        {rows.length === 0 ? null : (
+        <Paper
+          withBorder
+          radius="md"
+          p="sm"
+          style={selected.size > 0 ? { background: 'var(--mantine-color-blue-light)' } : undefined}
+        >
+          {/* minHeight pins the bar to the height of its tallest state (the
+              batch buttons, 22px) and nowrap stops the row breaking in two on
+              a narrow panel; ticking a row therefore never moves the list. */}
+          <Group justify="space-between" gap="xs" wrap="nowrap" style={{ minHeight: 22 }}>
+            {/* nowrap: a squeezed label would wrap to two lines and change the
+                bar height, which is the whole point of pinning it. */}
+            <Group gap="xs" wrap="nowrap" style={{ minWidth: 0, whiteSpace: 'nowrap' }}>
+              <Checkbox
+                size="sm"
+                checked={allSelected}
+                indeterminate={!allSelected && pageIds.some((id) => selected.has(id))}
+                onChange={(event) => {
+                  const checked = event.currentTarget.checked
+                  setSelected((current) => {
+                    const next = new Set(current)
+                    for (const id of pageIds) {
+                      if (checked) next.add(id)
+                      else next.delete(id)
+                    }
+                    return next
+                  })
+                }}
+                label={t('panel.selectAll')}
+              />
+              {selected.size > 0 ? (
+                <Text size="sm" c="blue.9">{fill(t('panel.selected'), { count: selected.size })}</Text>
+              ) : null}
+            </Group>
+            {selected.size > 0 ? (
+              <Group gap="xs" wrap="nowrap" style={{ flex: 'none' }}>
+                <Button variant="default" size="compact-xs" disabled={busy} onClick={() => setSelected(new Set())}>
                   {t('panel.clear')}
                 </Button>
-                <Button variant="light" size="compact-sm" disabled={busy} onClick={() => unarchive([...selected])}>
+                <Button variant="light" size="compact-xs" disabled={busy} onClick={() => unarchive([...selected])}>
                   {fill(t('panel.unarchiveMany'), { count: selected.size })}
                 </Button>
-                <Button color="red" variant="light" size="compact-sm" disabled={busy} onClick={() => setPendingDelete([...selected])}>
+                <Button color="red" variant="light" size="compact-xs" disabled={busy} onClick={() => setPendingDelete([...selected])}>
                   {fill(t('panel.deleteMany'), { count: selected.size })}
                 </Button>
               </Group>
-            </Group>
-          </Paper>
-        ) : null}
+            ) : null}
+          </Group>
+        </Paper>
+        )}
 
         {state.loading && state.data === null ? (
           <Center h={160}><Loader size="sm" /></Center>
@@ -858,6 +925,17 @@ function ArchiveManagerPage(props) {
           </Center>
         ) : (
           <Stack gap="md">
+            {/* A fixed-height window onto the page's rows: with
+                LIST_VISIBLE_ROWS or fewer there is nothing to scroll, so no
+                bar appears. No CSS-only form exists because rows differ in
+                height (badges, long titles), so the cut is measured from the
+                rendered cards. */}
+            <div
+              ref={listRef}
+              style={listMaxHeight === null
+                ? undefined
+                : { maxHeight: listMaxHeight, overflowY: 'auto' }}
+            >
             {groups.map((group) => (
               <Stack key={group.key} gap="xs">
                 <Text size="xs" c="dimmed" fw={500}>{groupLabel(group)}</Text>
@@ -867,6 +945,7 @@ function ArchiveManagerPage(props) {
                   return (
                     <Card
                       key={row.id}
+                      data-row-card
                       withBorder
                       radius="md"
                       padding="sm"
@@ -924,34 +1003,25 @@ function ArchiveManagerPage(props) {
                 })}
               </Stack>
             ))}
+            </div>
 
-            {/* Left inset matches the card padding (so the select-all box lines
-                up with the row checkboxes); the right edge stays flush with the
-                card border, like the refresh button in the header. */}
-            <Group justify="space-between" gap="xs" style={{ paddingLeft: 13 }}>
-              <Group gap={8}>
-                <Checkbox
+            {/* Row count on the left, pagination + page size on the right. */}
+            <Group justify="space-between" gap="xs" style={{ paddingLeft: 12 }}>
+              <Text size="xs" c="dimmed">{fill(t('panel.total'), { count: total })}</Text>
+              <Group gap="xs" wrap="nowrap">
+                <Pagination size="sm" total={pageCount} value={page} onChange={setPage} withEdges={pageCount > 7} />
+                <NativeSelect
                   size="xs"
-                  checked={allSelected}
-                  indeterminate={!allSelected && pageIds.some((id) => selected.has(id))}
+                  w={92}
+                  data={PAGE_SIZE_OPTIONS.map((value) => ({ value: String(value), label: fill(t('panel.pageSize'), { count: value }) }))}
+                  value={String(pageSize)}
                   onChange={(event) => {
-                    const checked = event.currentTarget.checked
-                    setSelected((current) => {
-                      const next = new Set(current)
-                      for (const id of pageIds) {
-                        if (checked) next.add(id)
-                        else next.delete(id)
-                      }
-                      return next
-                    })
+                    setPage(1)
+                    setPageSize(Number(event.currentTarget.value))
                   }}
-                  aria-label={t('panel.selectAll')}
+                  aria-label={fill(t('panel.pageSize'), { count: pageSize })}
                 />
-                <Text size="xs" c="dimmed">{t('panel.selectAll')}</Text>
-                <Text size="xs" c="dimmed">·</Text>
-                <Text size="xs" c="dimmed">{fill(t('panel.total'), { count: total })}</Text>
               </Group>
-              <Pagination size="sm" total={pageCount} value={page} onChange={setPage} withEdges={pageCount > 7} />
             </Group>
           </Stack>
         )}

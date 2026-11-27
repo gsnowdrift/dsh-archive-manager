@@ -73,14 +73,16 @@ const api = {
       const day = dayOf(row.archivedAt)
       return (!filter.dateFrom || day >= filter.dateFrom) && (!filter.dateTo || day <= filter.dateTo)
     })
+    const pageSize = (request && request.pageSize) || 10
+    const page = (request && request.page) || 1
     return {
       ok: true,
       value: {
         total: filtered.length,
-        page: 1,
-        pageSize: 25,
-        pageCount: 1,
-        items: filtered,
+        page,
+        pageSize,
+        pageCount: Math.max(1, Math.ceil(filtered.length / pageSize)),
+        items: filtered.slice((page - 1) * pageSize, page * pageSize),
         workspaces: { ws1: 'demo-web', ws2: 'demo-data', ws3: 'demo-docs' },
         archiveTotal: rows.length,
         dates: [...buckets.entries()]
